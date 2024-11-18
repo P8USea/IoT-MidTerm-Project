@@ -10,4 +10,4 @@ Components to use: Esp32 DOIT Devkit V1, Soil moisture sensor, mini water pump (
 
 P/s: To me, it's such an interesting topic as I love planting for consuming or decorating, but were so innocent to let them dry witherly or overwater them. That makes a lot of sense if I could supervise them remotely without worrying whether they are well taken care of.
 
-![Flowchart] (./IoT-MidTerm.drawio.png)
+![Flowchart](./IoT-MidTerm.drawio.png)
