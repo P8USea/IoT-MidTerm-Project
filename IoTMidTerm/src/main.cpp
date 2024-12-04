@@ -18,12 +18,8 @@ namespace
     const char *moisture_topic = "sensor/moisture";
     const char *motor_topic = "motor";
     unsigned int publish_count = 0;
-    uint16_t keepAlive = 15;    // seconds (default is 15)
-    uint16_t socketTimeout = 5; // seconds (default is 15)
-    int willQoS = 0;
 
     int sensor_pin = 33;
-    int motor_pin = 18;
     int data = 0;
 
 }
@@ -46,11 +42,12 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     }
     Serial.printf("Message arrived from topic [%s]: %s\n", topic, message.c_str());
 
+    //Xu ly thong tin cua cam bien
+    if(String(topic) == "sensor/moisture"){
+        sensorHandler();
+    }
 
-    // if(String(topic) == "sensor/moisture"){
-    //     sensorHandler();
-    // }
-
+    //Neu nhan thong tin tuoi nuoc cua nguoi dung
     if (String(topic) == "motor") {
         if(message == "ON"){
             doMotorStuff();
@@ -73,7 +70,7 @@ void mqttReconnect()
             Serial.print(client_id);
             Serial.println(" connected");
             mqttClient.subscribe(moisture_topic);
-            mqttClient.subscribe(motor_topic);
+            mqttClient.subscribe(motor_topic); //Dang ky motor_topic de nguoi dung dua ra quyet dinh tuoi nuoc
 
         }
         else
@@ -86,29 +83,36 @@ void mqttReconnect()
     }
 }
 
-int reliability_count = 0;
-int moisture_threshold = 70;
-int noise_threshold = 3;
+
+//MCU dua ra quyet dinh dua tren cam bien
+int reliability_count = 0; //Bien dem kiem tra do on dinh cua cam bien
+int moisture_threshold = 70; //Nguong am de tuoi nuoc
+int noise_threshold = 3; //Nguong sai so trong truong hop nhieu tin hieu
 int sensor_last = 0;
 void sensorHandler(){
     int sensor_now = data;
-    Serial.println(reliability_count);
-
-    if(reliability_count > 10){
+    //Neu khong bi bien dong do nhieu trong 10 lan dem
+    if(reliability_count >= 10){
+        //Neu dat du nguong am de tuoi nuoc
         if(data < moisture_threshold){
             doMotorStuff();
             Serial.println("Watering...");
         }
+        //Reset bien dem ve 0
         reliability_count = 0;
     }
     else{
+        //Neu lan do truoc va lan do sau khong bi chenh lech qua nhieu do nhieu
         if(abs(sensor_last - sensor_now) < noise_threshold){
+            //Tang bien dem tin cay
             reliability_count++;
         }
         sensor_last = sensor_now;
     }
     
 }
+
+//Ham dieu khien dong co voi xung pwm o muc 75%
 int enA = 25;
 int in1 = 26;
 int in2 = 27;
@@ -137,8 +141,6 @@ void setup()
     delay(10);
     setup_wifi(ssid, password);
     tlsClient.setCACert(ca_cert);
-    // mqttClient.setKeepAlive(keepAlive); // To see how long mqttClient detects the TCP connection is lost
-    // mqttClient.setSocketTimeout(socketTimeout); // To see how long mqttClient detects the TCP connection is lost
 
     mqttClient.setCallback(mqttCallback);
     mqttClient.setServer(MQTT::broker, MQTT::port);
@@ -148,7 +150,7 @@ void setup()
 void loop()
 {
     int value = analogRead(sensor_pin);
-    data = map(value, 0, 4095, 0, 100);
+    data = map(value, 0, 4095, 0, 100); // map gia tri 0-12 bit ->> 0-100%
     delay(20);
 
     
